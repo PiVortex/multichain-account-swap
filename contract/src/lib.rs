@@ -1,10 +1,10 @@
-use near_sdk::{near, env, AccountId};
 use near_sdk::collections::UnorderedMap;
+use near_sdk::{env, near, AccountId};
 
 #[near(contract_state)]
 pub struct Contract {
     trades: UnorderedMap<String, Trade>,
-    trade_count: u32
+    trade_count: u32,
 }
 
 #[near(serializers = [borsh, json])]
@@ -16,23 +16,27 @@ pub struct Trade {
     nft_contract: String,
     nft_id: u32,
     sale_price: u32,
-    swapped: bool
+    swapped: bool,
 }
 
 impl Default for Contract {
     fn default() -> Self {
         Self {
             trades: UnorderedMap::new(b"t"),
-            trade_count: 0
+            trade_count: 0,
         }
     }
 }
 
 #[near]
 impl Contract {
-
-    pub fn create_trade(&mut self, eth_add: String, nft_contract: String, nft_id: u32, sale_price: u32) -> String {
-
+    pub fn create_trade(
+        &mut self,
+        eth_add: String,
+        nft_contract: String,
+        nft_id: u32,
+        sale_price: u32,
+    ) -> String {
         let seller_id = env::predecessor_account_id();
 
         self.trade_count += 1;
@@ -46,18 +50,26 @@ impl Contract {
             nft_contract,
             nft_id,
             sale_price,
-            swapped: false
+            swapped: false,
         };
 
         self.trades.insert(&trade_id, &new_trade);
 
         trade_id
-
     }
 
-    // pub fn accept_trade(&mut self) {
+    pub fn accept_trade(&mut self, trade_id: String, btc_add: String) {
+        let buyer_id = env::predecessor_account_id();
 
-    // }
+        let mut trade = self
+            .trades
+            .get(&trade_id)
+            .unwrap_or_else(|| panic!("No trade with id {}", trade_id));
+
+        trade.buyer_id = Some(buyer_id);
+        trade.btc_add = Some(btc_add);
+        self.trades.insert(&trade_id, &trade);
+    }
 
     // pub fn confirm_trade(&mut self) {
 
@@ -70,7 +82,7 @@ impl Contract {
     // pub fn withdraw_btc(&mut self, paylod: String) {
 
     // }
-    
+
     // pub fn get_all_trades(&self) -> Vec<String, Trade> {
 
     // }
